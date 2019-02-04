@@ -1,49 +1,81 @@
 var express = require('express');
-const promoRouter = express.Router();
+const promotionRouter = express.Router();
 const bodyParser = require('body-parser');
+const authenticate = reqired('../authenticate');
+const cors = require('./cors');
+var Promotions = required('../models/promotions');
 
-promoRouter.use(bodyParser.json());
+promotionRouter.use(bodyParser.json());
 
-promoRouter.route('/')
-.all((req, res, next)=> {
-    res.statusCode = 200;
-    res.setHeader('Content-Type','text/plain');
-    next();
+promotionRouter.route('/')
+.get(cors.cors, (req, res, next) => {
+    Promotions.find({})
+    .populate('comments.author')
+    .then((promotions) => {
+        res.statusCode = 200;
+        res.setHeader('Content-Type','application/json');
+        res.json(promotions);
+    },(err) => next(err))
+    .catch((err) => next(err));
 })
-.get((req, res, next)=> {
-    res.end('Will send all the promotions to you');
+.post(cors.corsWithOptions, authenticate.verifyUser,(req, res, next) => {
+    Promotions.create(req.body)
+    .then((dishes) =>{
+        console.log('Promotions created!!!')
+        res.statusCode = 200
+        res.setHeader('Content-Type','application/json')
+    },(err) => next(err))
+    .catch((err) => next(err));
 })
-.post((req, res, next)=> {
-    res.end('Will add the promotions: '+ req.body.name +
-    ' with details: '+ req.body.description);
-})
-.put((req, res, next)=> {
-    res.statusCode = 403;
+.put(cors.corsWithOptions,authenticate.verifyUser (req, res, next)=> {
     res.end('Put operation not supported');
 })
-.delete((req, res, next)=> {
-    res.end('Deleting all the promotions');
+.delete(cors.cors, (req, res, next)=> {
+    Promotions.remove({})
+    .then((resp) => {
+        res.statusCode = 200;
+        res.setHeader('Content-Type','application/json')
+        res.json(resp)
+    },(err) => next(err))
+    .catch((err) => next(err));
 });
 
 
-promoRouter.route('/:promoId')
-.get((req, res, next)=>{
-    res.end('Will send details of :' + req.params.promoId
-            + ' to you');
+promotionRouter.route('/:promoId')
+.get(cors.cors, (req, res, next)=>{
+    Promotions.findById(req.params.promoId)
+    .populate('comments.author')
+    .then((promotion) => {
+        res.statusCode = 200;
+        res.setHeader('Content-Type','application/json');
+    },(err) => next(err))
+    .catch((err) => next(err));
 })
-.post((req, res, next)=>{
+.post(cors.corsWithOptions, authenticate.verifyUser, (req, res, next)=>{
     res.statusCode = 403;
-    res.end('Post operation is not supported on /promotions/' +
+    res.end('Post operation is not supported on /promo/' +
                 req.params.promoId);
 })
-.put((req, res, next)=>{
-    res.write('Updating the promotions' + req.params.promoId);
-    res.end('Will update the promotions : '+
-            req.body.name + ' with detail ' +
-            req.body.description);
+.put(cors.corsWithOptions, authenticate.verifyUser, (req, res, next) => {
+    Promotions.findByIdAndUpdate(req.params.promoId, {
+        $set:req.body
+    },{new:true})
+    .populate('comments.author')
+    .then((dish) => {
+        res.statusCode = 200;
+        res.setHeader('Content-Type','application/json');
+        res.json(promo)
+    },(err) => next(err))
+    .catch((err) => next(err));
 })
-.delete((req, res, next)=>{
-    res.end('Deleting all the promotions');
+.delete(cors.corsWithOptions,authenticate.verifyUser, (req, res, next) => {
+    Promotions.findByIdAndRemove(req.params.promoId)
+    .then((resp)=>{
+        res.statusCode = 200
+        res.setHeader('Content-Type','application/json');
+        res.json(dish)
+    },(err)=>next(err))
+    .catch((err)=>next(err));
 });
 
-module.exports = promoRouter;
+module.exports = promotionRouter;
