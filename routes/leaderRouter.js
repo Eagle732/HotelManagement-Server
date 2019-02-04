@@ -1,11 +1,17 @@
 var express = require('express');
 const leaderRouter = express.Router();
 const bodyParser = require('body-parser');
+const cors = require('./cors');
+
+
 
 leaderRouter.use(bodyParser.json());
 
 leaderRouter.route('/')
-.all((req, res, next)=> {
+.options(cors.corsWithOptions, (req,res) =>{
+    res.sendStatus(200);
+})
+.all((req, res, next)=>{
     res.statusCode = 200;
     res.setHeader('Content-Type','text/plain');
     next();
@@ -14,14 +20,14 @@ leaderRouter.route('/')
     res.end('Will send all the leader to you');
 })
 .post((req, res, next)=> {
-    res.end('Will add the leader: '+ req.body.name +
-    ' with details: '+ req.body.description);
+    res.statusCode = 200;
+    res.setHeader('Content-Type','text/plain');
+    next();
 })
-.put((req, res, next)=> {
-    res.statusCode = 403;
+.put(cors.cors, (req, res, next)=> {
     res.end('Put operation not supported');
 })
-.delete((req, res, next)=> {
+.delete(cors.cors, (req, res, next)=> {
     res.end('Deleting all the leader');
 });
 
