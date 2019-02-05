@@ -21,7 +21,7 @@ const commentSchema = new Schema({
         timestamps: true
 });
 
-const promotionSchema = new Schema({
+const leaderSchema = new Schema({
     name:{
         type: String,
         required: true,
@@ -36,6 +36,6 @@ const promotionSchema = new Schema({
     timestamps: true
 });
 
-var Promotions = mongoose.model('promo',promotionSchema)
+var Leaders = mongoose.model('leader',leaderSchema)
 
-module.exports = Promotions;
+module.exports = Leaders;

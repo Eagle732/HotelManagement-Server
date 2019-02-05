@@ -1,15 +1,15 @@
 var express = require('express');
 const leaderRouter = express.Router();
 const bodyParser = require('body-parser');
-const authenticate = reqired('../authenticate');
+const authenticate = require('../authenticate');
 const cors = require('./cors');
-var Leaders = required('../models/leaders');
+var Leaders = require('../models/leaders');
 
 leaderRouter.use(bodyParser.json());
 
 leaderRouter.route('/')
 .get(cors.cors, (req, res, next) => {
-    Leaders.find({})
+    Leaders.find(req.query)
     .populate('comments.author')
     .then((leaders) => {
         res.statusCode = 200;
@@ -27,7 +27,7 @@ leaderRouter.route('/')
     },(err) => next(err))
     .catch((err) => next(err));
 })
-.put(cors.corsWithOptions,authenticate.verifyUser (req, res, next)=> {
+.put(cors.corsWithOptions, authenticate.verifyUser, (req, res, next)=> {
     res.end('Put operation not supported');
 })
 .delete(cors.cors, (req, res, next)=> {

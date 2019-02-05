@@ -3,13 +3,20 @@ var router = express.Router();
 var User = require('../models/user');
 const bodyParser = require('body-parser');
 var passport = require('passport');
-
+const cors = require('./cors');
 var authenticate = require('../authenticate');
 router.use(bodyParser.json());
 
 /* GET users listing. */
-router.get('/', function(req, res, next) {
-  res.send('respond with a resource');
+router.options('*', cors.corsWithOptions, (req, res) => {res.sendStaus(200);})
+router.get('/', cors.corsWithOptions, authenticate.verifyUser, (req, res, next) => {
+    User.find({})
+    .then((users) => {
+        res.statusCode = 200;
+        res.setHeader('Content-Type','application/json');
+        res.json(users);
+    })
+    .catch((err) => next(err));
 });
 /*
 router.post('/signup',(req, res, next) => {
@@ -104,13 +111,13 @@ router.post('/signup', (req, res, next) => {
                 res.json({err:err});
                 return ;
             }
-            passport.authenticate('local')(req, res, () => {
+            passport.authenticate('local', (req, res, next) => {
               res.statusCode = 200;
               res.setHeader('Content-Type', 'application/json');
               res.json({success: true, status: 'Registration Successful!'});
         });
       });
-    }
+  }
   });
 });
 
@@ -121,12 +128,30 @@ router.post('/login', passport.authenticate('local'), (req, res) => {
   res.json({success: true, status: 'You are successfully logged in!'});
 });
 */
-router.post('/login', passport.authenticate('local'), (req, res) => {
 
-  var token = authenticate.getToken({_id: req.user._id});
-  res.statusCode = 200;
-  res.setHeader('Content-Type', 'application/json');
-  res.json({success: true, token: token, status: 'You are successfully logged in!'});
+router.post('/login',cors.corsWithOptions, (req, res, next) => {
+  passport.authenticate('local', (err, user, info) => {
+      if(err){
+          return next(err);
+      }
+      if(!user){
+          res.statusCode = 401;
+          res.setHeader('Content-Type','application/json');
+          res.json({success: false, status: 'You are not authenticated!!',err: info});
+      }
+      req.logIn(user, (err) => {
+          if(err){
+              res.statusCode = 401;
+              res.setHeader('Content-Type','application/json');
+              res.json({success: false, status: 'You are not authenticated!!',err: info});
+          }
+
+          var token = authenticate.getToken({_id: req.user._id});
+          res.statusCode = 200;
+          res.setHeader('Content-Type','application/json');
+          res.json({success: true, status: 'Logged In!!',token: token});
+      });
+  })(req, res, next);
 });
 
 router.get('/logout', (req, res )=>{
@@ -149,6 +174,24 @@ router.get('/facebook/token',passport.authenticate('facebook-token'),(req, res) 
         res.json({success: true, token: token, status: 'You are successfully logged in!'});
     }
 });
+
+router.get('/checkJWTtoken', cors.corsWithOptions, (req, res)=>{
+    passport.authenticate('jwt', {session: false}, (err, user,info) =>{
+        if(err)
+            return next(errr);
+
+        if(!user){
+            res.statusCode = 401;
+            res.setHeader('Content-Type','application/json');
+            return res.json({status:'JWT Invalid', success:true, err:info});
+        }else{
+            res.statusCode = 200;
+            res.setHeader('Content-Type','application/json');
+            return res.json({status:'JWT valid', success:true, user:user});
+        }
+    })(req, res);
+});
+
 
 
 module.exports = router;

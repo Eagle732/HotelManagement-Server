@@ -1,15 +1,15 @@
 var express = require('express');
 const promotionRouter = express.Router();
 const bodyParser = require('body-parser');
-const authenticate = reqired('../authenticate');
+const authenticate = require('../authenticate');
 const cors = require('./cors');
-var Promotions = required('../models/promotions');
+var Promotions = require('../models/promotions');
 
 promotionRouter.use(bodyParser.json());
 
 promotionRouter.route('/')
 .get(cors.cors, (req, res, next) => {
-    Promotions.find({})
+    Promotions.find(req.query)
     .populate('comments.author')
     .then((promotions) => {
         res.statusCode = 200;
@@ -27,7 +27,7 @@ promotionRouter.route('/')
     },(err) => next(err))
     .catch((err) => next(err));
 })
-.put(cors.corsWithOptions,authenticate.verifyUser (req, res, next)=> {
+.put(cors.corsWithOptions,authenticate.verifyUser, (req, res, next)=> {
     res.end('Put operation not supported');
 })
 .delete(cors.cors, (req, res, next)=> {
